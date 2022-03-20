@@ -18,15 +18,18 @@ const anonymizedProxyUrlToServer: Record<string, Server> = {};
 }
  
 export const anonymizeProxy = (proxyUrl: string |setings, callback?: (error: Error | null) => void): Promise<string> => {
-	let parsedProxyUrl: string;
+	let theUrl: string;
+	let parsedProxyUrl: URL;
 	let localport: number;
 	
 	if(typeof proxyUrl == 'string') {
 		parsedProxyUrl = new URL(proxyUrl);
+		theUrl = proxyUrl;
 		localport=0;
 	} else {
 		parsedProxyUrl = new URL(proxyUrl.url);
-		localport=parseInt(proxyUrl.localport);
+		theUrl = proxyUrl.url;
+		localport=parseInt(''+proxyUrl.localport);
 		
 	}
     if (parsedProxyUrl.protocol !== 'http:') {
@@ -35,7 +38,7 @@ export const anonymizeProxy = (proxyUrl: string |setings, callback?: (error: Err
 
     // If upstream proxy requires no password, return it directly
     if (!parsedProxyUrl.username && !parsedProxyUrl.password) {
-        return nodeify(Promise.resolve(proxyUrl), callback);
+        return nodeify(Promise.resolve(theUrl), callback);
     }
 
     let server: Server & { port: number };
@@ -49,7 +52,7 @@ export const anonymizeProxy = (proxyUrl: string |setings, callback?: (error: Err
                     prepareRequestFunction: () => {
                         return {
                             requestAuthentication: false,
-                            upstreamProxyUrl: proxyUrl,
+                            upstreamProxyUrl: theUrl,
                         };
                     },
                 }) as Server & { port: number };
