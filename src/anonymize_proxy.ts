@@ -12,8 +12,23 @@ const anonymizedProxyUrlToServer: Record<string, Server> = {};
  * Parses and validates a HTTP proxy URL. If the proxy requires authentication, then the function
  * starts an open local proxy server that forwards to the upstream proxy.
  */
-export const anonymizeProxy = (proxyUrl: string, callback?: (error: Error | null) => void): Promise<string> => {
-    const parsedProxyUrl = new URL(proxyUrl);
+ interface setings {
+ url: string;
+ localport: number;
+}
+ 
+export const anonymizeProxy = (proxyUrl: string |setings, callback?: (error: Error | null) => void): Promise<string> => {
+	let parsedProxyUrl: string;
+	let localport: number;
+	
+	if(typeof proxyUrl == 'string') {
+		parsedProxyUrl = new URL(proxyUrl);
+		localport=0;
+	} else {
+		parsedProxyUrl = new URL(proxyUrl.url);
+		localport=parseInt(proxyUrl.localport);
+		
+	}
     if (parsedProxyUrl.protocol !== 'http:') {
         throw new Error('Invalid "proxyUrl" option: only HTTP proxies are currently supported.');
     }
@@ -30,7 +45,7 @@ export const anonymizeProxy = (proxyUrl: string, callback?: (error: Error | null
             .then(() => {
                 server = new Server({
                     // verbose: true,
-                    port: 0,
+                    port: localport,
                     prepareRequestFunction: () => {
                         return {
                             requestAuthentication: false,
